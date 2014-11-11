@@ -247,7 +247,7 @@ ExecHashTableCreate(Hash *node, List *hashOperators)
 	hashtable->curbatch = 0;
 	hashtable->nbatch_original = nbatch;
 	hashtable->nbatch_outstart = nbatch;
-	hashtable->growEnabled = true;
+	hashtable->growEnabled = false;
 	hashtable->totalTuples = 0;
 	hashtable->innerBatchFile = NULL;
 	hashtable->outerBatchFile = NULL;
@@ -753,17 +753,28 @@ HeapTuple
 ExecScanHashBucket(HashJoinState *hjstate,
 				   ExprContext *econtext)
 {
+	if(hjstate->probing_inner){
+		hashtable = hjstate->inner_hj_HashTable;
+		hashTuple = hjstate->inner_hj_CurTuple;
+		hashValue = hjstate->outer_hj_CurHashValue;
+		bucketNo = hjstate->inner_hj_CurBucketNo;
+		tupleSlot = hjstate->hj_InnerTupleSlot;
+	}else{
+		hashtable = hjstate->outer_hj_HashTable;
+		hashTuple = hjstate->outer_hj_CurTuple;
+		hashValue = hjstate->inner_hj_CurHashValue;
+		bucketNo = hjstate->outer_hj_CurBucketNo;
+		tupleSlot = hjstate->hj_OuterTupleSlot;
+	}
+		
 	List	   *hjclauses = hjstate->hashclauses;
-	HashJoinTable hashtable = hjstate->hj_HashTable;
-	HashJoinTuple hashTuple = hjstate->hj_CurTuple;
-	uint32		hashvalue = hjstate->hj_CurHashValue;
 
 	/*
 	 * hj_CurTuple is NULL to start scanning a new bucket, or the address of
 	 * the last tuple returned from the current bucket.
 	 */
 	if (hashTuple == NULL)
-		hashTuple = hashtable->buckets[hjstate->hj_CurBucketNo];
+		hashTuple = hashtable->buckets[hjstate->inner_hj_CurBucketNo];
 	else
 		hashTuple = hashTuple->next;
 
