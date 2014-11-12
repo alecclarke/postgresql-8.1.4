@@ -43,8 +43,7 @@ static void ExecHashIncreaseNumBatches(HashJoinTable hashtable);
 TupleTableSlot *
 ExecHash(HashState *node)
 {
-	elog(ERROR, "Hash node does not support ExecProcNode call convention");
-	return NULL;
+	return MultiExecHash(*node);
 }
 
 /* ----------------------------------------------------------------
@@ -749,7 +748,7 @@ ExecHashGetBucketAndBatch(HashJoinTable hashtable,
  *
  * The current outer tuple must be stored in econtext->ecxt_outertuple.
  */
-HashTuple
+HashJoinTuple
 ExecScanHashBucket_probeouter(HashJoinState *hjstate,
 				   ExprContext *econtext)
 {
@@ -789,7 +788,7 @@ ExecScanHashBucket_probeouter(HashJoinState *hjstate,
 			if (ExecQual(hjclauses, econtext, false))
 			{
 				hjstate->outer_hj_CurTuple = hashTuple;
-				return heapTuple;
+				return hashTuple;
 			}
 		}
 
@@ -808,7 +807,7 @@ ExecScanHashBucket_probeouter(HashJoinState *hjstate,
  *
  * The current inner tuple must be stored in econtext->ecxt_outertuple.
  */
-HashTuple
+HashJoinTuple
 ExecScanHashBucket_probeinner(HashJoinState *hjstate,
 				   ExprContext *econtext)
 {
@@ -848,7 +847,7 @@ ExecScanHashBucket_probeinner(HashJoinState *hjstate,
 			if (ExecQual(hjclauses, econtext, false))
 			{
 				hjstate->inner_hj_CurTuple = hashTuple;
-				return heapTuple;
+				return hashTuple;
 			}
 		}
 
